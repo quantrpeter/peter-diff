@@ -1,0 +1,15 @@
+[project]
+name = "peter-diff"
+version = "0.1.1"
+description = "A simple CLI tool to diff two text files."
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = []
+
+[project.scripts]
+peter-diff = "peter_diff.cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
