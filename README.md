@@ -2,7 +2,7 @@
 
 A Python CLI tool for side-by-side diffing of files and folders.
 
-![](image/2026-05-23T01_18_19.png)
+!()[image/2026-05-23T01_18_19.png]
 
 ## Installation
 
@@ -25,7 +25,7 @@ peter-diff file1.txt file2.txt
 
 Displays a side-by-side diff with line numbers. Changed characters within a line are highlighted. Identical files print `same`.
 
-![](image/Screenshot 2026-05-23 at 9.01.13 AM.png)
+!()[image/Screenshot 2026-05-23 at 9.01.13 AM.png]
 
 ### Compare two folders
 
@@ -55,7 +55,7 @@ Status indicators:
 | `→` | only in right folder |
 | `bin` | binary / unreadable, skipped |
 
-![](image/Screenshot 2026-05-23 at 9.00.52 AM.png)
+!()[image/Screenshot 2026-05-23 at 9.00.52 AM.png]
 
 ### Flags
 
