@@ -1,6 +1,8 @@
+import os
 import sys
 import difflib
 import shutil
+from pathlib import Path
 
 # ANSI codes
 _RESET  = "\033[0m"
@@ -76,6 +78,10 @@ def _char_diff(left, right, col):
 
 
 def side_by_side_diff(lines1, lines2, file1, file2, only_diff=False):
+    # if lines1 same as lines2, just print one of them
+    if lines1 == lines2:
+        print("same")
+        return
     term_w = shutil.get_terminal_size((160, 40)).columns
     # layout: "NNNN M content … │ NNNN M content …"
     #          4  + 1+1+1 = 7 chars overhead each side  +  3 for " │ "
@@ -146,6 +152,107 @@ def side_by_side_diff(lines1, lines2, file1, file2, only_diff=False):
     print(sep)
 
 
+def compare_dirs(dir1, dir2, only_diff=False):
+    p1, p2 = Path(dir1), Path(dir2)
+
+    def get_files(base):
+        result = set()
+        for f in base.rglob("*"):
+            if f.is_file():
+                result.add(f.relative_to(base))
+        return result
+
+    files1 = get_files(p1)
+    files2 = get_files(p2)
+    all_paths = sorted(files1 | files2, key=str)
+
+    # Precompute per-file status
+    status_map = {}
+    for rel in all_paths:
+        in1, in2 = rel in files1, rel in files2
+        if not in1:
+            status_map[rel] = "only2"
+        elif not in2:
+            status_map[rel] = "only1"
+        else:
+            try:
+                l1 = (p1 / rel).read_text(errors="replace").splitlines(keepends=True)
+                l2 = (p2 / rel).read_text(errors="replace").splitlines(keepends=True)
+                status_map[rel] = "same" if l1 == l2 else "diff"
+            except Exception:
+                status_map[rel] = "binary"
+
+    entries = [(rel, status_map[rel]) for rel in all_paths
+               if not only_diff or status_map[rel] != "same"]
+
+    _LABEL = {"same": "", "diff": "diff", "only1": "←", "only2": "→", "binary": "bin"}
+    rows = []  # (left_str, status_label, right_str)
+
+    def walk(items, pl, pr):
+        groups = {}
+        for rel, st in items:
+            k = rel.parts[0]
+            if k not in groups:
+                groups[k] = {"status": None, "children": []}
+            if len(rel.parts) == 1:
+                groups[k]["status"] = st
+            else:
+                groups[k]["children"].append((Path(*rel.parts[1:]), st))
+
+        sorted_keys = sorted(groups)
+        for idx, k in enumerate(sorted_keys):
+            g = groups[k]
+            last = (idx == len(sorted_keys) - 1)
+            conn = "└── " if last else "├── "
+            cont = "    " if last else "│   "
+
+            if g["status"] is not None:  # file
+                st = g["status"]
+                in1, in2 = st != "only2", st != "only1"
+                rows.append((
+                    (pl + conn + k) if in1 else "",
+                    _LABEL[st],
+                    (pr + conn + k) if in2 else "",
+                ))
+            else:  # directory
+                ch = g["children"]
+                in1 = any(s != "only2" for _, s in ch)
+                in2 = any(s != "only1" for _, s in ch)
+                rows.append((
+                    (pl + conn + k + "/") if in1 else "",
+                    "",
+                    (pr + conn + k + "/") if in2 else "",
+                ))
+                walk(ch,
+                     pl + (cont if in1 else "    "),
+                     pr + (cont if in2 else "    "))
+
+    walk(entries, "", "")
+
+    # Render side by side
+    term_w = shutil.get_terminal_size((160, 40)).columns
+    st_w = 5
+    col = max(24, (term_w - st_w - 4) // 2)
+
+    use_color = _color_ok()
+    _ST_COLOR = {"diff": _YELLOW, "←": _RED, "→": _GREEN}
+
+    def fmt_st(s):
+        padded = s.ljust(st_w)
+        if use_color and s in _ST_COLOR:
+            return _ST_COLOR[s] + padded + _RESET
+        return padded
+
+    div = "─" * (col + 1 + st_w) + "─┼─" + "─" * col
+    lh = (_BOLD if use_color else "") + _pad(dir1, col) + (_RESET if use_color else "")
+    rh = (_BOLD if use_color else "") + dir2 + (_RESET if use_color else "")
+    print(f"{lh} {' ' * st_w} │ {rh}")
+    print(div)
+    for left, st, right in rows:
+        print(f"{_pad(left, col)} {fmt_st(st)} │ {right}")
+    print(div)
+
+
 def main():
     args = sys.argv[1:]
     only_diff = "-o" in args
@@ -153,15 +260,23 @@ def main():
     if len(args) != 2:
         print("Usage: peter-diff [-o] file1 file2", file=sys.stderr)
         sys.exit(1)
-    file1, file2 = args[0], args[1]
+    path1, path2 = args[0], args[1]
+
+    if os.path.isdir(path1) and os.path.isdir(path2):
+        compare_dirs(path1, path2, only_diff=only_diff)
+        return
+    if os.path.isdir(path1) or os.path.isdir(path2):
+        print("Error: cannot compare a file with a directory", file=sys.stderr)
+        sys.exit(1)
+
     try:
-        with open(file1) as f1, open(file2) as f2:
+        with open(path1) as f1, open(path2) as f2:
             lines1 = f1.readlines()
             lines2 = f2.readlines()
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
-    side_by_side_diff(lines1, lines2, file1, file2, only_diff=only_diff)
+    side_by_side_diff(lines1, lines2, path1, path2, only_diff=only_diff)
 
 
 if __name__ == "__main__":

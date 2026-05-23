@@ -1,12 +1,11 @@
 # peter-diff
 
-A simple Python CLI tool to compare two text files and output their differences, similar to the Unix `diff` command.
+A Python CLI tool for side-by-side diffing of files and folders.
 
 ## Installation
 
 ```bash
 pip install -e .
-pip uninstall peter-diff
 ```
 OR
 
@@ -16,9 +15,51 @@ pip install peter-diff
 
 ## Usage
 
+### Compare two files
+
 ```sh
-pydiff file1.txt file2.txt
+peter-diff file1.txt file2.txt
 ```
+
+Displays a side-by-side diff with line numbers. Changed characters within a line are highlighted. Identical files print `same`.
+
+![](image/Screenshot 2026-05-23 at 9.01.13 AM.png)
+
+### Compare two folders
+
+```sh
+peter-diff dir1/ dir2/
+```
+
+Displays a side-by-side tree view of both directories:
+
+```
+dir1/                          │ dir2/
+───────────────────────────────┼───────────────────────────────
+├── config.txt                 │ ├── config.txt
+├── hello.py         diff      │ ├── hello.py
+├── only_in_1.txt    ←         │
+                    →          │ ├── only_in_2.txt
+└── src/                       │ └── src/
+    └── main.py      diff      │     └── main.py
+```
+
+Status indicators:
+| Symbol | Meaning |
+|--------|---------|
+| *(none)* | identical |
+| `diff` | file differs |
+| `←` | only in left folder |
+| `→` | only in right folder |
+| `bin` | binary / unreadable, skipped |
+
+![](image/Screenshot 2026-05-23 at 9.00.52 AM.png)
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `-o` | Only show differences — hide identical files/lines |
 
 ## Publishing to PyPI
 

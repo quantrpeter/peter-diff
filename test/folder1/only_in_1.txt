@@ -1,0 +1,2 @@
+This file only exists in folder1.
+It should appear as "only in folder1" in the diff.
