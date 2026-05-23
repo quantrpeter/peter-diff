@@ -35,16 +35,7 @@ peter-diff dir1/ dir2/
 
 Displays a side-by-side tree view of both directories:
 
-```
-dir1/                          │ dir2/
-───────────────────────────────┼───────────────────────────────
-├── config.txt                 │ ├── config.txt
-├── hello.py         diff      │ ├── hello.py
-├── only_in_1.txt    ←         │
-                    →          │ ├── only_in_2.txt
-└── src/                       │ └── src/
-    └── main.py      diff      │     └── main.py
-```
+![](image/folder.png)
 
 Status indicators:
 | Symbol | Meaning |
@@ -55,7 +46,6 @@ Status indicators:
 | `→` | only in right folder |
 | `bin` | binary / unreadable, skipped |
 
-![](image/folder.png)
 
 ### Flags
 
