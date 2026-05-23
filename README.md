@@ -2,6 +2,8 @@
 
 A Python CLI tool for side-by-side diffing of files and folders.
 
+![](2026-05-23T01_18_19.png)
+
 ## Installation
 
 ```bash
